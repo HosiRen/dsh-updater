@@ -1,0 +1,8 @@
+# The updater is one dual-face package: the Host half registers the update
+# routes and the Settings page's browser half travels in the same row's
+# `dsh.client` declaration. Runtime tunables live in this row's `config`; the
+# Settings page writes them back here through the configuration editor.
+
+- insert:
+    - id: dsh-updater
+      name: '@local/dsh-updater'

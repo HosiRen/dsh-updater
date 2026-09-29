@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "更新",
+    "description": "把当前 DeepSeek Harness 代码检出与上游仓库同步，重装依赖并重新构建。"
+  }
+}

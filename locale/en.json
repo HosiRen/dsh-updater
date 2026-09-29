@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Updater",
+    "description": "Sync this DeepSeek Harness checkout with its upstream repository, then reinstall dependencies and rebuild it."
+  }
+}
