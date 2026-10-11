@@ -48,6 +48,7 @@ export declare const en: {
     readonly failurePhase: "Phase";
     readonly failureExitCode: "Exit code";
     readonly failureNoExit: "Command never started";
+    readonly failureDiagnostic: "First error in the log";
     readonly failureStderr: "Standard error";
     readonly failureEmptyOutput: "No output";
     readonly failureLogPath: "Log file";

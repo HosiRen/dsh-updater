@@ -41,6 +41,12 @@ export interface UpdateFailure {
     readonly exitCode: number | null;
     /** Tail of the failing command's standard error, bounded by configuration. */
     readonly stderrTail: string;
+    /**
+     * First real diagnostic found in the run log, with the lines that follow it.
+     * A build's captured tail is usually progress noise, so this is what actually
+     * names the failure; absent when the log held no known marker.
+     */
+    readonly errorSummary?: string;
     /** Absolute path of the run log holding the complete output. */
     readonly logPath: string;
 }
