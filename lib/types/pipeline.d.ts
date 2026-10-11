@@ -9,7 +9,7 @@
  */
 import type { GitResult } from './git.ts';
 import type { UpdaterPaths } from './state.ts';
-import type { BuildScope, UpdatePhase } from './types.ts';
+import type { BuildScope, RemoteTransport, UpdatePhase } from './types.ts';
 /** One build step the pipeline runs after a successful merge. */
 export interface BuildStep {
     /** Phase the run reports while this step executes. */
@@ -112,6 +112,8 @@ export interface RunnerConfig {
     readonly remote: string;
     /** Branch the update fast-forwards to. */
     readonly branch: string;
+    /** Protocol the fetch reaches the remote over. */
+    readonly remoteTransport: RemoteTransport;
     /** Build the pipeline runs after installing. */
     readonly build: BuildScope;
     /** Package manager executable the pipeline runs. */

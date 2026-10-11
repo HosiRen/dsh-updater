@@ -6,6 +6,7 @@
  * @module @local/dsh-updater/config
  */
 import z from '@deepseek-ai/schemastery';
+import type { RemoteTransport } from './transport.ts';
 import type { AutoCheckFrequency, BuildScope, UpdaterConfigView } from './types.ts';
 /** Resolved plugin configuration. */
 export interface Config {
@@ -19,6 +20,14 @@ export interface Config {
     remote: string;
     /** Branch the update fast-forwards to. */
     branch: string;
+    /**
+     * Protocol the update reaches the remote over. `origin` fetches the remote by
+     * name, using whatever URL the repository already configures. `https` and
+     * `ssh` rewrite that URL for this fetch instead, so the repository's own
+     * remote configuration is left alone and a checkout whose remote names an
+     * unreachable protocol can still be updated over the other.
+     */
+    remoteTransport: RemoteTransport;
     /** Which build the pipeline runs after a successful merge. */
     build: BuildScope;
     /** Unattended probe cadence; `startup` probes once per process start. */
@@ -40,6 +49,10 @@ export interface Config {
 export declare const Config: z<Config>;
 /**
  * Project the effective configuration onto the fields the Settings page shows.
+ *
+ * `resolvedUrl` is deliberately absent: deriving it reads the repository, and
+ * this projection stays synchronous. Whoever assembles the status adds it from
+ * the remote URL it resolved.
  * @param config - Resolved plugin configuration.
  * @returns The browser-visible subset.
  */

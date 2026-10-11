@@ -1,6 +1,6 @@
 /**
  * The Update settings page: the version comparison, the update actions, the
- * two pipeline tunables, the run log, and the failure record.
+ * pipeline tunables, the run log, and the failure record.
  *
  * The component is presentational. Every fact arrives through the inject face
  * the registration provides — `useUpdater` for the published state and one

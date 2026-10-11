@@ -5,6 +5,8 @@
  *
  * @module @local/dsh-updater/types
  */
+import type { RemoteTransport } from './transport.ts';
+export type { RemoteTransport };
 /**
  * The DeepSeek Harness source checkout this process runs from, resolved at
  * run time so the plugin works from any installation path.
@@ -90,6 +92,14 @@ export interface UpdaterConfigView {
     readonly remote: string;
     /** Branch the update fast-forwards to. */
     readonly branch: string;
+    /**
+     * Protocol the update reaches the remote over. `origin` uses the remote's
+     * configured URL; the others rewrite it, leaving repository configuration
+     * untouched. `resolvedUrl` reports what the choice currently amounts to.
+     */
+    readonly remoteTransport: RemoteTransport;
+    /** URL the current transport resolves to, or `undefined` when it cannot be derived. */
+    readonly resolvedUrl?: string;
     /** Build the pipeline runs. */
     readonly build: BuildScope;
     /** Unattended probe cadence. */
@@ -130,6 +140,7 @@ export interface UpdaterStatus {
 export interface UpdaterConfigPatch {
     readonly remote?: string;
     readonly branch?: string;
+    readonly remoteTransport?: RemoteTransport;
     readonly build?: BuildScope;
     readonly autoCheck?: AutoCheckFrequency;
 }

@@ -9,7 +9,7 @@
  */
 import type { RunnerMode } from './pipeline.ts';
 import type { UpdaterPaths } from './state.ts';
-import type { BuildScope, UpdateRun } from './types.ts';
+import type { BuildScope, RemoteTransport, UpdateRun } from './types.ts';
 /** Everything one update run needs to start. */
 export interface StartUpdateOptions {
     /** Checkout root. */
@@ -22,6 +22,8 @@ export interface StartUpdateOptions {
     readonly remote: string;
     /** Branch the update fast-forwards to. */
     readonly branch: string;
+    /** Protocol the fetch reaches the remote over. */
+    readonly remoteTransport: RemoteTransport;
     /** Build the pipeline runs after installing. */
     readonly build: BuildScope;
     /** Package manager executable; defaults to `pnpm`. */

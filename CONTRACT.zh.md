@@ -41,6 +41,7 @@ plugin_manager { action: "install_bundle", target: "/abs/path/to/user-plugin/dsh
 - **检查更新**：用 `git ls-remote` 探测配置的分支。只读，不写入 `.git`，不触碰任何工作区文件。
 - **立即更新**：拒绝脏工作区，记录当前提交，然后在分离子进程中依次执行 `git fetch` → `git merge --ff-only` → `pnpm install` → 配置的构建。
 - **回滚**：把代码检出退回上次运行前记录的提交并重装依赖。只要存在运行记录就会提供。
+- **更新方式**：`remoteTransport` 决定拉取走哪个协议。`origin` 按 remote 名称拉取，即 git 自身行为；`https` 与 `ssh` 从该 remote 的地址推导出对应协议的地址，配显式 refspec 拉取。
 - 频率选择器通过配置编辑器把 `autoCheck` 写回 profile patch。
 
 ### 配置
@@ -52,10 +53,12 @@ plugin_manager { action: "install_bundle", target: "/abs/path/to/user-plugin/dsh
 | `repoRoot` | 运行时解析 | 显式的代码检出根目录。缺省时由运行中 profile 的安装锚点推导，因此同一份安装能在任意检出路径下工作。 |
 | `remote` | `origin` | 更新读取的 git 远端。 |
 | `branch` | `master` | 更新快进到的分支。 |
+| `remoteTransport` | `origin` | 拉取协议。`origin` 按 remote 名称拉取；`https`、`ssh` 把 remote 地址改写为对应协议后以其为 fetch 源，并保持 remote-tracking ref 仍是 `<remote>/<branch>`，因此后续快进合并不受影响。 |
 | `build` | `full` | `full` 执行 `pnpm run build`（宿主库、浏览器产物、Web 前端、native 系统二进制）。`lib-web` 依次执行 `build:lib` 与 `build:web`，跳过 native 插件。 |
 | `autoCheck` | `startup` | `startup`、`daily`、`weekly`、`monthly` 或 `never`。 |
 | `pnpmCommand` | `pnpm` | 安装与构建步骤使用的包管理器。 |
 | `timeoutMs` | `1200000` | 单条流水线命令的上限。 |
+| `probeTimeoutMs` | `60000` | 单次远端探测的上限。链路到达远端较慢时调大。 |
 | `logTailBytes` | `65536` | 返回给页面的运行日志字节数。 |
 | `maxDirtyFiles` | `50` | 代码检出为脏时列出的工作区路径数。 |
 
@@ -83,7 +86,9 @@ plugin_manager { action: "install_bundle", target: "github:<所有者>/<仓库>"
 
 **状态。** `$DSH_HOME/updater/` 存放 `state.json`（当前运行）、`check.json`（上次探测）、`logs/<runId>.log` 与 `run.lock`。探测历史落在文件而非存储域，是因为该记录必须能被分离子进程与跨宿主代际读取，而本包位于 pnpm workspace 之外，无法从检出的顶层 `node_modules` 解析 Harness 存储服务或 `zod`。插件运行时不 import 任何第一方包。
 
-**探测。** `git ls-remote <remote> refs/heads/<branch>` 是宿主按自身节奏执行的唯一网络操作。结果作为 `CheckResult` 存为运行状态旁的 `check.json`，并提供 daily、weekly、monthly 频率所比较的 `lastCheckedAt`。
+**探测。** `git ls-remote <source> refs/heads/<branch>` 是宿主按自身节奏执行的唯一网络操作，其中 `<source>` 由 `fetch-target.ts` 从 `remoteTransport` 与 remote 地址推导：`origin` 得到 remote 名称，`https`、`ssh` 得到改写后的地址。结果作为 `CheckResult` 存为运行状态旁的 `check.json`，并提供 daily、weekly、monthly 频率所比较的 `lastCheckedAt`。
+
+**传输。** `transport.ts` 解析 remote 地址（`https://`、`ssh://`、`git@host:path` 三种写法）得到主机与仓库路径，再按所选协议重新拼装；本机路径没有主机可改写，返回 `undefined`，此时 `resolveFetchTarget` 退回按 remote 名称拉取，并把缺失的 `resolvedUrl` 交给页面显示为回退提示。改写只影响本次 fetch 的参数，仓库自身的 `remote.origin.url` 始终不变；显式 refspec `+refs/heads/<branch>:refs/remotes/<remote>/<branch>` 保证 `FETCH_HEAD` 之外，快进合并读取的 remote-tracking ref 同样被更新。
 
 **运行更新。** `runner.ts` 获取锁文件，记录起始提交与 `preflight` 运行状态，并以分离方式启动 `lib/update-runner.js`，把运行日志作为其 stdio 目标。子进程逐阶段推进状态文件（`fetching`、`merging`、`installing`、`building`），随后进入 `done` 或 `failed`。状态文件是唯一真源，父进程只读取它，因此运行中途重启宿主不会丢失进度。
 

@@ -41,6 +41,7 @@ The row inserted by `cordis.patch.yml` has the id `dsh-updater`. Its browser hal
 - **Check** probes the configured branch with `git ls-remote`. Read-only: it writes nothing to `.git` and touches no working-tree file.
 - **Update** refuses a dirty checkout, records the current commit, then runs `git fetch` → `git merge --ff-only` → `pnpm install` → the configured build in a detached subprocess.
 - **Roll back** returns the checkout to the commit recorded before the last run and reinstalls dependencies. It is offered whenever a run is recorded.
+- **Transport** is chosen by `remoteTransport`. `origin` fetches the remote by name, which is git's own behaviour; `https` and `ssh` derive the URL of that protocol from the remote's own address and fetch it with an explicit refspec.
 - The frequency selector writes `autoCheck` back to the profile patch through the configuration editor.
 
 ### Configuration
@@ -52,10 +53,12 @@ Every field is a validated Config field of the `dsh-updater` row, so a profile p
 | `repoRoot` | resolved at run time | Explicit checkout root. Absent, it is derived from the running profile's install anchor, which is what lets one copy work from any checkout path. |
 | `remote` | `origin` | Git remote the update reads. |
 | `branch` | `master` | Branch the update fast-forwards to. |
+| `remoteTransport` | `origin` | Fetch protocol. `origin` fetches the remote by name; `https` and `ssh` rewrite the remote's URL and fetch that instead, while the remote-tracking ref stays `<remote>/<branch>`, so the fast-forward that follows is unaffected. |
 | `build` | `full` | `full` runs `pnpm run build` (Host libraries, browser bundles, Web frontend, native system binaries). `lib-web` runs `build:lib` then `build:web`, skipping the native addon. |
 | `autoCheck` | `startup` | `startup`, `daily`, `weekly`, `monthly`, or `never`. |
 | `pnpmCommand` | `pnpm` | Package manager for the install and build steps. |
 | `timeoutMs` | `1200000` | Bound on one pipeline command. |
+| `probeTimeoutMs` | `60000` | Bound on one remote probe. A link that reaches the remote slowly needs a larger value. |
 | `logTailBytes` | `65536` | Run-log bytes returned to the page. |
 | `maxDirtyFiles` | `50` | Working-tree paths reported when the checkout is dirty. |
 
@@ -83,7 +86,9 @@ The source tree — `src/`, `tests/`, and the tsdown, vitest, and tsconfig files
 
 **State.** `$DSH_HOME/updater/` holds `state.json` (the current run), `check.json` (the last probe), `logs/<runId>.log`, and `run.lock`. The probe history lives in a file rather than a storage domain because the record has to stay readable by the detached subprocess and across Host generations, and this package sits outside the pnpm workspace, so it cannot resolve the Harness storage services or `zod` from a checkout's top-level `node_modules`. Nothing else in the plugin imports a first-party package at run time.
 
-**Probing.** `git ls-remote <remote> refs/heads/<branch>` is the only network operation the Host performs on its own schedule. Its result is stored as a `CheckResult` in `check.json` beside the run state, and supplies the `lastCheckedAt` that the daily, weekly, and monthly cadences compare against.
+**Probing.** `git ls-remote <source> refs/heads/<branch>` is the only network operation the Host performs on its own schedule. `<source>` comes from `fetch-target.ts`, which resolves `remoteTransport` against the remote's own address: `origin` yields the remote name, `https` and `ssh` yield the rewritten URL. The result is stored as a `CheckResult` in `check.json` beside the run state, and supplies the `lastCheckedAt` that the daily, weekly, and monthly cadences compare against.
+
+**Transport.** `transport.ts` parses a remote URL in any of its three written forms (`https://`, `ssh://`, `git@host:path`) into a host and repository path, then reassembles it under the requested protocol. A local filesystem path has no host to rewrite and yields `undefined`, in which case `resolveFetchTarget` falls back to fetching the remote by name and leaves `resolvedUrl` absent for the page to report as a fallback. Rewriting only changes this fetch's arguments: the repository's own `remote.origin.url` is never touched, and the explicit refspec `+refs/heads/<branch>:refs/remotes/<remote>/<branch>` updates the remote-tracking ref the fast-forward reads, not just `FETCH_HEAD`.
 
 **Running an update.** `runner.ts` acquires a lock file, records the starting commit and a `preflight` run state, and launches `lib/update-runner.js` detached, with the run log as its stdio target. The child advances the state file phase by phase (`fetching`, `merging`, `installing`, `building`), then reaches `done` or `failed`. The state file is the single source of truth and the parent only reads it, so restarting the Host mid-run loses nothing.
 

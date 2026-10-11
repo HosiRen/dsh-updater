@@ -19,6 +19,7 @@ Refresh the page and open **Settings → Update**.
 - **Check** probes the configured branch with `git ls-remote`. Read-only: it writes nothing to `.git` and touches no working-tree file.
 - **Update** runs `git fetch` → `git merge --ff-only` → `pnpm install` → `pnpm build` in a detached subprocess, so refreshing the page or restarting Harness does not interrupt it.
 - **Roll back** returns the checkout to the commit recorded before the last run and reinstalls dependencies.
+- **Transport** chooses between the repository's own remote, HTTPS, and SSH. The last two are derived from the remote URL, so the repository's own configuration is never edited — when HTTPS is unreachable but SSH answers, switching is all it takes.
 
 Three hard rules:
 
@@ -34,6 +35,7 @@ An update takes effect only after Harness is restarted manually.
 |---|---|---|
 | `remote` | `origin` | Git remote the update reads |
 | `branch` | `master` | Branch the update fast-forwards to |
+| `remoteTransport` | `origin` | Fetch protocol. `origin` fetches the remote by name; `https` and `ssh` rewrite its URL and fetch that with an explicit refspec, leaving the repository configuration untouched |
 | `build` | `full` | `full` runs `pnpm run build`; `lib-web` skips the native addon |
 | `autoCheck` | `startup` | `startup`, `daily`, `weekly`, `monthly`, or `never` |
 | `pnpmCommand` | `pnpm` | Package manager executable for install and build |

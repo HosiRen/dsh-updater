@@ -19,6 +19,7 @@ plugin_manager { action: "install_bundle", target: "github:<所有者>/dsh-updat
 - **检查更新**：用 `git ls-remote` 探测配置的分支。只读，不写入 `.git`，不触碰任何工作区文件。
 - **立即更新**：在分离子进程中依次执行 `git fetch` → `git merge --ff-only` → `pnpm install` → `pnpm build`。刷新页面或重启 Harness 都不会中断它。
 - **回滚**：把代码检出退回上次运行前记录的提交，并重装依赖。
+- **更新方式**：可选跟随仓库 remote、HTTPS 或 SSH。后两者由 remote 地址推导，**不改动仓库自身的配置**——当 HTTPS 走不通而 SSH 可用时，切换即可继续更新。
 
 三条硬性约束：
 
@@ -34,6 +35,7 @@ plugin_manager { action: "install_bundle", target: "github:<所有者>/dsh-updat
 |---|---|---|
 | `remote` | `origin` | 更新读取的 git 远端 |
 | `branch` | `master` | 更新快进到的分支 |
+| `remoteTransport` | `origin` | 拉取协议。`origin` 按 remote 名称拉取；`https`、`ssh` 将 remote 地址改写为对应协议，配显式 refspec 拉取，仓库配置不变 |
 | `build` | `full` | `full` 执行 `pnpm run build`；`lib-web` 跳过 native 插件 |
 | `autoCheck` | `startup` | `startup`、`daily`、`weekly`、`monthly` 或 `never` |
 | `pnpmCommand` | `pnpm` | 安装与构建使用的包管理器 |

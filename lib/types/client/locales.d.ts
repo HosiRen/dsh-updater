@@ -34,6 +34,12 @@ export declare const en: {
     readonly retry: "Retry";
     readonly runningPhase: "Current phase: {phase}";
     readonly settingsTitle: "Update settings";
+    readonly transportLabel: "Update transport";
+    readonly transportOrigin: "Repository remote";
+    readonly transportHttps: "HTTPS";
+    readonly transportSsh: "SSH";
+    readonly transportResolved: "Fetches from {url}";
+    readonly transportUnresolved: "The remote URL could not be read; fetching the remote by name instead.";
     readonly autoCheckLabel: "Auto-check";
     readonly buildLabel: "Build";
     readonly saving: "Saving…";

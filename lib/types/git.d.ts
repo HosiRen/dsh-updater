@@ -56,15 +56,27 @@ export declare function runGit(root: string, args: readonly string[], options?: 
  */
 export declare function repoFacts(root: string, options?: GitOptions): Promise<RepoFacts>;
 /**
- * Read the tip of one branch on a remote without changing the local repository.
+ * Read one remote's configured URL.
+ *
+ * A remote that names no URL reads as `undefined` rather than throwing. The
+ * caller picks a transport from this URL, and an `origin` transport still
+ * fetches by name, letting git report the real problem in its own words.
  * @param root - Checkout root.
  * @param remote - Remote name, such as `origin`.
+ * @param options - Timeout, output cap, and abort signal.
+ * @returns The URL git reports, or `undefined` when the remote has none.
+ */
+export declare function remoteUrl(root: string, remote: string, options?: GitOptions): Promise<string | undefined>;
+/**
+ * Read the tip of one branch on a remote without changing the local repository.
+ * @param root - Checkout root.
+ * @param source - What to ask: a remote name such as `origin`, or an explicit URL.
  * @param branch - Branch name without the `refs/heads/` prefix.
  * @param options - Timeout, output cap, and abort signal.
  * @returns The remote tip SHA, or `undefined` when the remote has no such branch.
  * @throws When `git ls-remote` itself fails, so an unreachable remote is never reported as "no update".
  */
-export declare function remoteHead(root: string, remote: string, branch: string, options?: GitOptions): Promise<string | undefined>;
+export declare function remoteHead(root: string, source: string, branch: string, options?: GitOptions): Promise<string | undefined>;
 /**
  * Fetch one remote, updating its remote-tracking refs.
  * @param root - Checkout root.
@@ -73,6 +85,22 @@ export declare function remoteHead(root: string, remote: string, branch: string,
  * @returns The raw result; the caller decides which exit codes are acceptable.
  */
 export declare function fetchRemote(root: string, remote: string, options?: GitOptions): Promise<GitResult>;
+/**
+ * Fetch one branch from an explicit URL into a remote's tracking ref.
+ *
+ * Fetching the URL rather than the remote name is what lets the caller reach
+ * the same repository over a protocol the remote does not configure. The
+ * explicit refspec is what makes that safe for the fast-forward that follows:
+ * a bare `git fetch <url>` updates only `FETCH_HEAD`, while the merge reads
+ * `refs/remotes/<remote>/<branch>`.
+ * @param root - Checkout root.
+ * @param remote - Remote name whose tracking ref receives the branch.
+ * @param url - Fetch URL, such as a rewritten SSH clone URL.
+ * @param branch - Branch name without the `refs/heads/` prefix.
+ * @param options - Timeout, output cap, and abort signal; the timeout defaults to ten minutes.
+ * @returns The raw result; the caller decides which exit codes are acceptable.
+ */
+export declare function fetchRemoteUrl(root: string, remote: string, url: string, branch: string, options?: GitOptions): Promise<GitResult>;
 /**
  * Fast-forward the checked-out branch onto `target`.
  * @param root - Checkout root.
