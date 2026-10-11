@@ -94,6 +94,8 @@ plugin_manager { action: "install_bundle", target: "github:<所有者>/<仓库>"
 
 **失败与回滚。** 任一步失败时，子进程先记录失败阶段、退出码与受限的 stderr 尾部，再执行 `git reset --hard <beforeSha>` 并重装依赖，最后记录 `rolled-back`。原始失败在回滚后依然保留：回滚步骤只追加日志，不替换原因。
 
+**构建输出残留与缓存失效。** 快进合并只删除受跟踪文件，而包的 `lib/` 与 `node_modules/` 是被忽略的构建输出，于是合并删掉一个包后它们会留在磁盘上，下一次构建仍把该包当作存在——这是上游删除演变成「找不到导出、而源码已无处可寻」的路径。因此合并之后、构建之前，`residue.ts` 会删除那些既无 `package.json`、又留有这两项的目录中的它们，并清除检出根目录下的 `.tsbuildinfo`。第二步不可省略：`tsc -b` 依据缓存而非文件系统判断是否重建，只删产物而不失效缓存，会把「已是最新」的判断变成一个永久的缺失，最终在打包阶段表现为 `Cannot find entry`。代价是一次全量重建，而这条流水线本就要跑完整构建。回滚路径同样执行这两步，因为回滚恢复的源码，其产物可能已在此前的合并中被删除。
+
 **归属。** HTTP 表面与无人值守探测都注册在 `ctx.effect` 内，因此禁用该行会移除路由并中止进行中的探测。
 
 **浏览器传输。** 两个半边经由 `/dsh-updater/*` 通信，其 handler 复用连接载体的浏览器信任栅栏。浏览器半边请求文档相对路由（`dsh-updater/status`），宿主注册绝对路由键，遵循[文档相对应用路由的决定](https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-09-14-web-document-relative-app-routes.md)。
