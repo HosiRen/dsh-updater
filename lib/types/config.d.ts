@@ -27,6 +27,11 @@ export interface Config {
     pnpmCommand: string;
     /** Bound on one pipeline command, in milliseconds. Builds are long. */
     timeoutMs: number;
+    /**
+     * Bound on one remote probe, in milliseconds. A link that reaches the remote
+     * slowly needs a larger value; the default suits an ordinary connection.
+     */
+    probeTimeoutMs: number;
     /** Bytes of run log returned to the Settings page. */
     logTailBytes: number;
     /** Working-tree paths reported when the checkout is dirty. */

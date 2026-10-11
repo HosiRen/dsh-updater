@@ -31,6 +31,13 @@ export declare const Config: import("@deepseek-ai/schemastery").default<ConfigSc
  */
 export declare function isRestartPending(run: UpdateRun | undefined, processStartedAt?: number): boolean;
 /**
+ * Describe why a probe gave up after every attempt failed.
+ * @param error - Message the last attempt reported.
+ * @param attempts - How many attempts were made.
+ * @returns The cause to record, with guidance when the remote looked unreachable.
+ */
+export declare function probeFailureDetail(error: string, attempts: number): string;
+/**
  * Mount the updater: one HTTP surface, one memoized checkout resolution, and
  * one unattended probe per activation when the cadence calls for it.
  * @param ctx - Host plugin context.
